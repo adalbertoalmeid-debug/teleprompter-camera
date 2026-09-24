@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Teleprompter Câmera</string>
+    <string name="title_activity_main">Teleprompter Câmera</string>
+    <string name="package_name">br.com.adalbertoalmeida.teleprompter.camera</string>
+    <string name="custom_url_scheme">br.com.adalbertoalmeida.teleprompter.camera</string>
+</resources>
