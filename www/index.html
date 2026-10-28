@@ -82,7 +82,7 @@ select{min-height:44px;padding:0 10px;border-radius:10px;border:1px solid var(--
 #prompter{position:fixed;inset:0;z-index:50;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 #flip{position:absolute;inset:0;transform-origin:50% 50%}
 #scroller{position:absolute;left:0;right:0;top:0;will-change:transform}
-#ptext{white-space:pre-wrap;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+#ptext{white-space:pre-wrap;overflow-wrap:break-word;hyphens:manual;-webkit-hyphens:manual}
 #ptext .ln{display:block;min-height:1em}
 #ptext .hl{display:block}
 #ptext .gap{display:block;height:.55em}
@@ -132,7 +132,9 @@ html.studio #home, html.studio #editor{visibility:hidden}
   .recdock{left:auto;right:calc(14px + var(--safe-area-inset-right,env(safe-area-inset-right,0px)));flex-direction:column-reverse;gap:12px}
   #recTime{min-width:0}
 }
-#countBig{position:absolute;inset:0;display:grid;place-items:center;font-size:140px;font-weight:700;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none}
+#countBig small{display:block;font-size:16px;margin-top:6px;text-align:center}
+#countBig > div{text-align:center}
+#countBig{position:absolute;inset:0;display:grid;place-items:center;font-size:140px;font-weight:700;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none;line-height:1}
 .camnote{position:absolute;left:12px;right:12px;bottom:calc(170px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));text-align:center;color:#fff;background:rgba(0,0,0,.55);border-radius:10px;padding:10px 12px;font-size:.95rem}
 @media (prefers-reduced-motion: reduce){ #recTime.on::before{animation:none} .recbtn span{transition:none} }
 
@@ -166,6 +168,21 @@ html.studio #home, html.studio #editor{visibility:hidden}
 .dialog .row{justify-content:flex-end}
 
 @media (prefers-reduced-motion: reduce){ .hud,.switch span,.switch span::after{transition:none} }
+/* ---------- Revisão de UX ---------- */
+.hud{flex-direction:column;gap:8px}
+.hudrow{display:flex;gap:8px;align-items:center;justify-content:center}
+.btn.stack{flex-direction:column;gap:0;width:58px;padding:0;font-size:11px;line-height:1.1;font-weight:700}
+.btn.stack svg{width:18px;height:18px}
+.topctl{position:absolute;top:calc(10px + var(--safe-area-inset-top,env(safe-area-inset-top,0px)));left:calc(10px + var(--safe-area-inset-left,env(safe-area-inset-left,0px)));z-index:3;transition:opacity .2s}
+.topctl .btn{min-height:44px;background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#fff}
+.topctl.faded{opacity:0;pointer-events:none}
+#clock > span{display:inline-block;padding:2px 10px;border-radius:8px}
+#clock > span:empty{display:none}
+.editfoot{position:sticky;bottom:0;z-index:4;display:flex;gap:10px;align-items:center;width:100%;max-width:760px;margin:0 auto;padding:10px 16px calc(10px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));background:var(--bg);border-top:1px solid var(--line)}
+.editfoot select{flex:1;min-width:0}
+#sheetWrap{background:rgba(0,0,0,.12)}
+#sheetWrap .sheet{max-height:56dvh;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+@media (prefers-reduced-motion: reduce){ .topctl{transition:none} }
 </style>
 </head>
 <body>
@@ -208,9 +225,6 @@ html.studio #home, html.studio #editor{visibility:hidden}
     <button class="btn icon ghost" id="deleteBtn" aria-label="Excluir roteiro">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"/></svg>
     </button>
-    <button class="btn primary" id="playBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>Gravar
-    </button>
   </div>
   <main>
     <input class="title-input" id="titleInput" placeholder="Nome do roteiro" aria-label="Nome do roteiro">
@@ -221,11 +235,13 @@ html.studio #home, html.studio #editor{visibility:hidden}
     </div>
     <textarea id="script" spellcheck="true" placeholder="Digite ou cole o texto aqui."></textarea>
     <div class="stats" id="stats"></div>
-    <div class="row">
-      <label for="laudaSel"><strong>Ler</strong></label>
-      <select id="laudaSel"></select>
-    </div>
   </main>
+  <div class="editfoot">
+    <select id="laudaSel" aria-label="Quais laudas usar"></select>
+    <button class="btn primary" id="playBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>Gravar
+    </button>
+  </div>
 </section>
 
 <!-- ============ PROMPTER ============ -->
@@ -251,22 +267,28 @@ html.studio #home, html.studio #editor{visibility:hidden}
     </button>
   </div>
 
-  <div class="hud" id="hud">
+  <div class="topctl" id="topctl">
     <button class="btn icon" id="pExit" aria-label="Sair do prompter">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
+  </div>
+
+  <div class="hud" id="hud">
+   <div class="hudrow">
     <button class="btn icon" id="pRestart" aria-label="Voltar ao início">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 5v14M18 6l-9 6 9 6z"/></svg>
     </button>
-    <button class="btn icon" id="pPrevL" aria-label="Lauda anterior">
+    <button class="btn stack" id="pPrevL" aria-label="Lauda anterior">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
-    </button>
-    <button class="btn primary" id="pPlay" aria-label="Iniciar">
+      <span>Lauda</span></button>
+    <button class="btn" id="pPlay" aria-label="Iniciar">
       <svg viewBox="0 0 24 24" fill="currentColor" id="pPlayIco"><path d="M7 4.5v15l12-7.5z"/></svg><span id="pPlayTxt">Rolar texto</span>
     </button>
-    <button class="btn icon" id="pNextL" aria-label="Próxima lauda">
+    <button class="btn stack" id="pNextL" aria-label="Próxima lauda">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14m0 0-6-6m6 6 6-6"/></svg>
-    </button>
+      <span>Lauda</span></button>
+   </div>
+   <div class="hudrow">
     <div class="speed" aria-label="Velocidade">
       <button class="btn icon" id="pSlow" aria-label="Mais devagar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14"/></svg>
@@ -279,6 +301,7 @@ html.studio #home, html.studio #editor{visibility:hidden}
     <button class="btn icon" id="pSettings" aria-label="Ajustes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
     </button>
+   </div>
   </div>
 
   <div class="mini hidden" id="mini">
@@ -411,12 +434,13 @@ let scripts = load(KEY_SCRIPTS, null);
 if(!Array.isArray(scripts)){
   scripts = [{
     id: uid(), title: "Roteiro de exemplo", updated: Date.now(), lauda: "all",
-    text: "Bem-vindo ao seu teleprompter.\nToque na tela para iniciar e pausar a rolagem.\n\n>>Esta linha aparece na cor de destaque.\n\nUse os botões de mais e menos para ajustar a velocidade enquanto lê.\n**\nAs duas barras abaixo começam a Lauda 2.\n//\nEsta é a Lauda 2.\nNo editor você escolhe se quer ler todas as laudas ou só uma delas.\n\nPara usar com o vidro do teleprompter, ligue o espelho nos ajustes."
+    text: "Bem-vindo ao seu teleprompter.\nToque na tela para iniciar e pausar a rolagem.\n\n>>Esta linha aparece na cor de destaque.\n\nUse os botões de mais e menos para ajustar a velocidade enquanto lê.\n**\nAs duas barras abaixo começam a Lauda 2.\n//\nEsta é a Lauda 2.\nNo editor você escolhe se quer ler todas as laudas ou só uma delas.\n\nNa tela de gravação, o botão vermelho grava e para. O texto não aparece no vídeo."
   }];
   save(KEY_SCRIPTS, scripts);
 }
 function persistScripts(){ if(!save(KEY_SCRIPTS, scripts)) toast("Não foi possível salvar: o armazenamento do navegador está cheio ou bloqueado."); }
 function persistSettings(){ save(KEY_SETTINGS, S); }
+function rgba(hex, a){ hex = (hex || "#000000").replace("#",""); if(hex.length === 3) hex = hex.split("").map(c => c + c).join(""); const n = parseInt(hex, 16) || 0; return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 
 /* ================= Helpers ================= */
@@ -461,7 +485,7 @@ function renderList(){
     const el = document.createElement("article");
     el.className = "item";
     el.innerHTML = `<h3></h3><p></p>
-      <div class="ops"><button class="btn primary icon" aria-label="Ler ${esc(sc.title||"roteiro")}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg></button></div>
+      <div class="ops"><button class="btn primary icon" aria-label="Gravar ${esc(sc.title||"roteiro")}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></button></div>
       <div class="meta"><span>${words} palavras</span><span>${laudas} ${laudas>1?"laudas":"lauda"}</span><span>cerca de ${fmtDur(words/S.wpm*60)}</span><span>${fmtDate(sc.updated)}</span></div>`;
     el.querySelector("h3").textContent = sc.title || "Sem título";
     el.querySelector("p").textContent = preview;
@@ -629,7 +653,8 @@ function applyStyle(){
   $("mkL").style.color = $("mkR").style.color = S.cRef;
   $("mkL").classList.toggle("hidden", !S.markers); $("mkR").classList.toggle("hidden", !S.markers);
   $("readline").style.borderColor = S.cRef; $("readline").classList.toggle("hidden", !S.readLine);
-  $("clock").style.color = S.cClock; $("clock").classList.toggle("hidden", !S.clock);
+  $("clock").style.color = S.cClock;
+  $("clock").querySelectorAll(":scope > span").forEach(e => e.style.background = rgba(S.cBg, .8)); $("clock").classList.toggle("hidden", !S.clock || Rec.recording);
   flip.style.transform = "none";
   flip.style.top = panel.style.paddingTop;
   $("pSpeed").textContent = $("mSpeed").textContent = S.speed;
@@ -646,6 +671,7 @@ function measure(){
   // o fim é quando a última linha chega na linha de leitura
   P.max = Math.max(0, contentH - Math.round(S.font * S.line * 0.5));
   P.laudaTops = Array.from(ptext.querySelectorAll("section.ls")).map(s => s.offsetTop - P.readY);
+  $("pPrevL").classList.toggle("hidden", P.laudaTops.length < 2); $("pNextL").classList.toggle("hidden", P.laudaTops.length < 2);
   P.offset = Math.min(P.offset, P.max);
   paint();
 }
@@ -680,6 +706,7 @@ function setPlaying(on){
   $("pPlay").setAttribute("aria-label", on ? "Pausar" : "Iniciar");
   $("pPlayIco").innerHTML = on ? '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>' : '<path d="M7 4.5v15l12-7.5z"/>';
   $("hud").classList.toggle("faded", on);
+  $("topctl").classList.toggle("faded", on);
   $("mini").classList.toggle("hidden", !on);
   placeDock();
 }
@@ -698,7 +725,7 @@ function jumpLauda(dir){
 
 /* Toque e arraste na área do texto */
 stage.addEventListener("pointerdown", e => {
-  if(e.target.closest(".hud,.mini,.recdock")) return;
+  if(e.target.closest(".topctl,.hud,.mini,.recdock")) return;
   P.drag = { y: e.clientY, startY: e.clientY, t: performance.now(), moved: false, id: e.pointerId };
   try{ stage.setPointerCapture(e.pointerId); }catch(_){}
 });
@@ -754,6 +781,7 @@ function setRecUI(){
   $("recBtn").disabled = !Rec.open;
   $("flipBtn").disabled = Rec.recording || Rec.busy || !Rec.open;
   $("recTime").classList.toggle("on", Rec.recording);
+  $("clock").classList.toggle("hidden", !S.clock || Rec.recording);
   $("pExit").disabled = Rec.busy;
 }
 async function openCamera(){
@@ -797,7 +825,7 @@ async function countdown(){
   const secs = +S.countdownS || 0, box = $("countBig");
   for(let i = secs; i > 0; i--){
     if(Rec.cancelCount) break;
-    box.textContent = i; box.classList.remove("hidden");
+    box.innerHTML = `<div>${i}<small>Toque no botão vermelho para cancelar</small></div>`; box.classList.remove("hidden");
     await new Promise(r => setTimeout(r, 1000));
   }
   box.classList.add("hidden");
